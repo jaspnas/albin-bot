@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Albin-bot</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        #chatWindow {
+            flex-grow: 1;
+            padding: 10px;
+            overflow: auto;
+            left: 50%;
+        }
+        p {
+            margin: 3%;
+        }
+        #chatBox {
+            position: fixed;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            padding: 10px;
+            background-color: #f1f1f1;
+        }
+        #userInput {
+            padding: 10px;
+            width: 300px; /* Adjust based on your preference */
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Albin-bot</h1>
+    <div id="chatWindow">
+        <!-- Chat messages will be displayed here -->
+    </div>
+    <div id="chatBox">
+    <input type="text" id="userInput" placeholder="Type your message here..." on>
+    <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        var chatHistory = [];
+
+        function updateChatWindow() {
+            var chatWindow = document.getElementById('chatWindow');
+            chatWindow.innerHTML = ''; // Clear current chat window
+            chatHistory.forEach(function(message) {
+                var messageElement = document.createElement('p');
+                if (message.type === 'user') {
+                    messageElement.style.textAlign = 'right';
+                }
+                messageElement.textContent = correctUserName(message.type) + ": " + message.content;
+                chatWindow.appendChild(messageElement);
+            });
+        }
+
+        function correctUserName(username) {
+            return username === 'user' ? 'You' : 'Albin';
+        }
+
+        function sendMessage() {
+            var userInput = document.getElementById('userInput').value;
+            if(userInput.trim() === '') return; // Ignore empty messages
+
+            // Add user message to history and display it
+            chatHistory.push({"type": "user", "content": userInput});
+            updateChatWindow();
+
+            // Simulate sending to server and receiving system response
+            sendChatHistory(userInput);
+
+            // Clear input
+            document.getElementById('userInput').value = '';
+        }
+
+        function sendChatHistory(userInput) {
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({chats: chatHistory}),
+            })
+            .then(data => {
+                console.log('Success:', data);
+
+                // Assume the API response includes the entire updated chat history
+                data.text().then(response => {
+                    chatHistory.push({"type": "system", "content": response}); // Update local chat history with response
+                    updateChatWindow(); // Update chat window with the latest history
+                });
+
+                // Update chat window with the latest history
+                updateChatWindow();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        
+    </script>
+
+    <script>
+        $(function() {
+        $('input').keypress(function(e) {
+            if(e.which == 10 || e.which == 13) {
+                sendMessage();
+            }
+        });});
+    </script>
+</body>
+</html>
